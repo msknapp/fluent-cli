@@ -1,0 +1,41 @@
+A command line syntax builder and parser for java.  Unlike most other libraries out there, this follows the
+builder pattern, so it's very easy to read and define new syntaxes.
+
+This also supports having arguments with no tokens.  For example:
+
+java -jar xyz.jar foo -a -b beta zop
+
+could be parsed, even though the value "foo" and "zop" has no token before it.
+
+Command lines are composed of groups of options.  Groups are parsed in order, but within a group the
+options can be provided in any order.  Options can take a value or not.  Options can (and usually do) have a
+token before their values with one or two hyphens, but you can have untokened values.  With untokened values,
+the order they are defined in the syntax dictates the order they are set in for the final command line values.
+
+Here is an example of how to use it from my unit tests:
+
+
+        CommandLineSyntax syntax = CommandLine.newSyntax()
+                .startGroup()
+                .startOption()
+                .takesToken(false).name("mode").required(true).description("The mode of operation")
+                .addOption()
+                .startOption()
+                .shortToken("f").longToken("file").takesValue(true).required(true).description("The file to use")
+                .addOption()
+                .startOption()
+                .shortToken("c").longToken("continuous").takesValue(false).required(false).defaultValue("false")
+                .description("Whether or not to run continuously")
+                .addOption()
+                .startOption()
+                .shortToken("i").longToken("interval").takesValue(true).required(false).defaultValue("60000")
+                .description("The interval in milliseconds")
+                .addOption()
+                .addGroup()
+                .build();
+
+        CommandLine cli = syntax.parse(new String[] {"normal","-f","/home/jerry/myfile.txt","-c"});
+        Assert.assertEquals("normal",cli.getOptionValue("mode"));
+        Assert.assertEquals("/home/jerry/myfile.txt",cli.getOptionValue("file"));
+        Assert.assertTrue(cli.booleanValue("c"));
+        Assert.assertEquals(60000,cli.intValue("i"));
